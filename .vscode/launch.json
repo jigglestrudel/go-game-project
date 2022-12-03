@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Build and Run",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "C/C++: g++.exe build active file",
+        }
+    ],
+    "version": "2.0.0"
+}
