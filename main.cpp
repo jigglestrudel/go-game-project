@@ -4,7 +4,7 @@
 #include "go.h"
 #include "conio2.h"
 
-int* board;
+
 
 int main()
 {
@@ -13,6 +13,7 @@ int main()
     _setcursortype(_NOCURSOR);
 
     int i;
+    int* board;
 
     board = (int *)malloc(sizeof(int) * BOARD_SIZE * BOARD_SIZE);
     if (board == nullptr)
@@ -34,26 +35,26 @@ int main()
     bool game_running = true;
     bool valid_position;
 
-    for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)
+    for (i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)
         board[i] = STONE_NO;
     
     cursor->x = BOARD_SIZE / 2;
     cursor->y = BOARD_SIZE / 2;
     cursor->color = CURSOR_GREEN;
 
-    textbackground(BLACK);                  
-    clrscr();                               
-    legend_printout();                      
-    board_printout(board);        
+    textbackground(BLACK);
+    clrscr();
+    legend_printout();
+    board_printout(board);
     turn_printout(current_player);
-    cursor_move(board, cursor, 0, 0);                    
+    cursor_move(board, cursor, 0, 0);
 
     while (game_running)
     {
         // GAME UPDATE
         if(!board_pending)
         {
-            kill_surroundings(board, last_placed_x, last_placed_y, current_player);
+            capture_surrounding_chains(board, last_placed_x, last_placed_y, current_player);
         }
             
         //  CURSOR UPDATE
@@ -139,6 +140,7 @@ int main()
                     cursor->x = BOARD_SIZE / 2;
                     cursor->y = BOARD_SIZE / 2;
                     cursor->color = CURSOR_GREEN;
+
                 break;
 
 

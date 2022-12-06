@@ -1,4 +1,3 @@
-#pragma GCC diagnostic ignored "-Wbuiltin-declaration-mismatch"
 /*
  * template for the course Podstawy Programowania
  * only to be used for the project in this course
