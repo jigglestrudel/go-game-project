@@ -125,7 +125,6 @@ int chain_check_suffocation(int* gamestate, bool* counted_stones, int x, int y, 
 void capture_surrounding_chains(int *gamestate, int x, int y, int player);
 
 
-void capture_chain(int* gamestate, int x, int y, int player);
 
 bool check_chain(int* gamestate, int x, int y, int player);
 
