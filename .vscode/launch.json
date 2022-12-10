@@ -1,7 +1,34 @@
 {
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) Build and Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/game.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\msys64\\mingw64\\bin\\gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description":  "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: gcc.exe build active file",
+
+        },
+        {
+            "name": "(gdb) Debug",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/game.exe",
@@ -24,6 +51,7 @@
                     "ignoreFailures": true
                 }
             ]
+
         },
         {
             "name": "Build and Run",
@@ -35,7 +63,7 @@
             "cwd": "${fileDirname}",
             "environment": [],
             "console": "externalTerminal",
-            "preLaunchTask": "C/C++: g++.exe build active file",
+            "preLaunchTask": "C/C++: gcc.exe build active file",
         }
     ],
     "version": "2.0.0"
