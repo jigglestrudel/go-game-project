@@ -1,6 +1,5 @@
 // Tomasz Krępa 193047
 // TODO scoring
-// TODO handicap
 // TODO scrolling
 
 #include <stdio.h>
@@ -17,7 +16,8 @@ int main()
 
     int input = 0;
     int i;
-    int *board;
+    int *board = NULL;
+    char buf[LONG_INPUT_BUFFER_SIZE];
 
     create_board(&board, BOARD_SIZE);
 
@@ -34,28 +34,9 @@ int main()
     }
 
     game_var->b_size = BOARD_SIZE;
-    game_var->current_player = STONE_BLACK;
-    game_var->last_placed_x = 0;
-    game_var->last_placed_y = 0;
-    game_var->last_captured_x = -1;
-    game_var->last_captured_y = -1;
-    game_var->black_score = 0;
-    game_var->white_score = 0;
+    new_game(&board, game_var, cursor);
 
-    char buf[LONG_INPUT_BUFFER_SIZE];
-
-    for (i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)
-        board[i] = STONE_NO;
-
-    cursor->x = BOARD_SIZE / 2;
-    cursor->y = BOARD_SIZE / 2;
-    cursor->color = CURSOR_GREEN;
-
-    textbackground(BLACK);
-    textcolor(WHITE);
-    clrscr();
-    legend_printout();
-    board_printout(board, game_var->b_size);
+    redraw_screen(board, game_var->b_size);
     turn_printout(game_var->current_player);
     cursor_draw(board, game_var->b_size, cursor);
 
@@ -64,9 +45,15 @@ int main()
     bool game_saved = false;
     bool game_running = true;
     bool game_loaded = false;
+    
+    bool handicap_placing = false;
+
+    // #1
 
     while (game_running)
     {
+        //#2
+        
         // GAME UPDATE
         capture_surrounding_chains(board, game_var->b_size, game_var->last_placed_x, game_var->last_placed_y, game_var);
 
@@ -112,23 +99,7 @@ int main()
         // checking for special characters (arrows)
         if (input == 0)
         {
-            input = getch();
-            if (input == SPEC_KEY_DOWN_ARROW) // down arrow
-            {
-                cursor_move(board, game_var->b_size, cursor, 0, -1);
-            }
-            else if (input == SPEC_KEY_UP_ARROW) // up arrow
-            {
-                cursor_move(board, game_var->b_size, cursor, 0, 1);
-            }
-            else if (input == SPEC_KEY_LEFT_ARROW) // left arrow
-            {
-                cursor_move(board, game_var->b_size, cursor, -1, 0);
-            }
-            else if (input == SPEC_KEY_RIGHT_ARROW) // right arrow
-            {
-                cursor_move(board, game_var->b_size, cursor, 1, 0);
-            }
+            control_the_cursor(board, game_var->b_size, cursor);
         }
         else
         {
@@ -138,13 +109,14 @@ int main()
                 if (valid_position)
                 {
                     cursor->color = CURSOR_YELLOW;
-                    // cursor_draw(board, game_var->b_size, cursor);
                     place_stone(board, game_var->b_size, cursor, game_var->current_player);
                     do
                     {
                         message_printout(MESSAGE_PENDING);
                         input = getch();
-                    } while (input != KEY_ENTER && input != KEY_ESCAPE);
+                    } 
+                    while (input != KEY_ENTER && input != KEY_ESCAPE);
+                    
                     if (input == KEY_ENTER)
                     {
                         game_var->last_placed_x = cursor->x;
@@ -187,13 +159,7 @@ int main()
                     break;
                 }
 
-                reset_game_var(game_var);
-
-                create_board(&board, game_var->b_size);
-
-                cursor_reset(cursor, game_var);
-
-                redraw_screen(board, game_var->b_size);
+                new_game(&board, game_var, cursor);
 
                 break;
 
@@ -243,6 +209,34 @@ int main()
 
             case 'q':
                 game_running = false;
+                break;
+
+            case 'h':
+                new_game(&board, game_var, cursor);
+                message_printout(MESSAGE_HANDICAP_IN_PROGRESS);
+                turn_printout(STONE_NO);
+                cursor->color = CURSOR_YELLOW;
+                do
+                {
+                    input = getch();
+                    if (input == 0)
+                    {
+                        control_the_cursor(board, game_var->b_size, cursor);
+                    }
+                    else
+                    {
+                        if (input == 'i')
+                            place_stone(board, game_var->b_size, cursor, STONE_BLACK);
+                    }
+
+                } while (input != KEY_ENTER && input != KEY_ESCAPE);
+
+                if (input == KEY_ENTER) 
+                {
+                    game_var->handicap_mode = true;
+                    game_var->current_player = STONE_WHITE;
+                }
+                else new_game(&board, game_var, cursor);
                 break;
             }
         }

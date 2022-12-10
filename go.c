@@ -39,16 +39,18 @@ void legend_printout()
     cputs(" l: load the game state");
     gotoxy(LEGEND_X, LEGEND_Y + 15);
     cputs(" f: finish the game");
+    gotoxy(LEGEND_X, LEGEND_Y + 16);
+    cputs(" h: introduce a handicap");
 }
 
-void down_legend_printout(int x, int y, int b, int w)
+void down_legend_printout(int x, int y, float b, float w)
 {
     char txt[32];
     gotoxy(LEGEND_X, LEGEND_Y + LEGEND_HEIGHT + 1);
     sprintf(txt, "position: x =%3d, y =%3d", x, y);
     cputs(txt);
     gotoxy(LEGEND_X, LEGEND_Y + LEGEND_HEIGHT + 2);
-    sprintf(txt, "black:white <=> %3d:%d", b, w);
+    sprintf(txt, "black:white <=> %3.1f:%3.1f", b, w);
     cputs(txt);
 }
 
@@ -260,7 +262,7 @@ void board_printout(int *gamestate, int b_size)
     }
 }
 
-void reset_game_var(game_var_t* game_var)
+void reset_game_var(game_var_t *game_var)
 {
     game_var->current_player = STONE_BLACK;
     game_var->last_placed_x = 0;
@@ -269,6 +271,7 @@ void reset_game_var(game_var_t* game_var)
     game_var->last_captured_y = -1;
     game_var->black_score = 0;
     game_var->white_score = 0;
+    game_var->handicap_mode = false;
 }
 
 void redraw_screen(int *gamestate, int b_size)
@@ -302,7 +305,6 @@ void cursor_reset(cursor_t *cur, game_var_t *game_var)
     cur->x = game_var->b_size / 2;
     cur->y = game_var->b_size / 2;
     cur->color = CURSOR_GREEN;
-
 }
 
 void place_stone(int *gamestate, int b_size, cursor_t *cur, int player)
@@ -330,6 +332,9 @@ void turn_printout(int player)
     case STONE_BLACK:
         cputs("It's BLACK's turn");
         break;
+    case STONE_NO:
+        cputs("HANDICAP mode");
+        break;
     default:
         break;
     }
@@ -343,68 +348,87 @@ void message_printout(int message_id)
     case MESSAGE_NONE:
         textcolor(WHITE);
         textbackground(BLACK);
-        cputs("                               \n");
-        cputs("                               \n");
+        cputs("                               ");
+        gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
+        cputs("                               ");
         break;
 
     case MESSAGE_PENDING:
         textcolor(WHITE);
         textbackground(BLACK);
-        
-        cputs("Press <enter> to confirm\n ");
+
+        cputs("Press <enter> to confirm");
+        gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
+
         cputs("or <esc> to cancel");
         break;
 
     case MESSAGE_NEW_GAME:
         textcolor(WHITE);
         textbackground(BLACK);
-        
-        cputs("board: [1]: 9x9   [2]: 13x13\n ");
+
+        cputs("board: [1]: 9x9   [2]: 13x13");
+        gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
+
         cputs("       [3]: 19x19 [4]: custom");
         break;
 
     case MESSAGE_INVALID_PLACE:
         textcolor(RED);
         textbackground(BLACK);
-        
+
         cputs("You can't place a stone here");
         break;
 
     case MESSAGE_NAME_INVALID:
         textcolor(RED);
         textbackground(BLACK);
-        
+
         cputs("That's not a valid filename");
         break;
 
     case MESSAGE_FILENAME_INPUT:
         textcolor(GREEN);
         textbackground(BLACK);
-        
+
         char txt[30];
-        sprintf(txt, "max %d letters", LONG_INPUT_BUFFER_SIZE-1);
+        cputs("Enter a valid filename ");
+        gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
+
+        sprintf(txt, "max %d letters", LONG_INPUT_BUFFER_SIZE - 1);
         cputs(txt);
         break;
-    
+
     case MESSAGE_SAVEFILE_OVERWRITE:
         textcolor(YELLOW);
         textbackground(BLACK);
-        cputs("Savefile will be overwritten\n ");
-        cputs("<enter> to save <esc> to cancel\n");
+
+        cputs("Savefile will be overwritten ");
+        gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
+        cputs("<enter> to save <esc> to cancel");
         break;
 
     case MESSAGE_GAME_SAVED:
         textcolor(GREEN);
         textbackground(BLACK);
-        
+
         cputs("Game saved!");
         break;
 
     case MESSAGE_GAME_LOADED:
         textcolor(GREEN);
         textbackground(BLACK);
-        
+
         cputs("Game loaded!");
+        break;
+
+    case MESSAGE_HANDICAP_IN_PROGRESS:
+        textcolor(YELLOW);
+        textbackground(BLACK);
+
+        cputs("Handicap placement mode");
+        gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
+        cputs("<enter> to save <esc> to cancel");
         break;
 
     default:
@@ -426,7 +450,7 @@ bool has_liberties(int *gamestate, int b_size, int x, int y)
 bool is_valid_position(int *gamestate, int b_size, int x, int y, int player, int stone_x, int stone_y)
 {
     if (gamestate[x + y * b_size] != STONE_NO || // cant place on top of another stone
-        (x == stone_x && y == stone_y))              // enforcing the ko rule
+        (x == stone_x && y == stone_y))          // enforcing the ko rule
 
         return false;
     else
@@ -483,7 +507,7 @@ bool will_kill_itself(int *gamestate, int b_size, int x, int y, int player)
     return false;
 }
 
-void capture_surrounding_chains(int *gamestate, int b_size, int x, int y, game_var_t* game_var)
+void capture_surrounding_chains(int *gamestate, int b_size, int x, int y, game_var_t *game_var)
 {
     int score = 0;
     if ((x - 1) >= 0 && gamestate[(x - 1) + y * b_size] == game_var->current_player)
@@ -494,7 +518,7 @@ void capture_surrounding_chains(int *gamestate, int b_size, int x, int y, game_v
         score += capture_chain(gamestate, b_size, x, y - 1, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
     if ((y + 1) < b_size && gamestate[x + (y + 1) * b_size] == game_var->current_player)
         score += capture_chain(gamestate, b_size, x, y + 1, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
-    
+
     if (game_var->current_player == STONE_BLACK) // current black turn means white is capturing
         game_var->white_score += score;
     else
@@ -557,7 +581,7 @@ int capture_chain(int *gamestate, int b_size, int x, int y, int player, int *las
 {
     bool *counted_stones = (bool *)malloc(sizeof(bool) * b_size * b_size);
     int i, j;
-    //bool only_stone = true;
+    // bool only_stone = true;
     int captured_stones = 0;
     for (i = 0; i < b_size * b_size; i++)
         counted_stones[i] = false;
@@ -578,7 +602,6 @@ int capture_chain(int *gamestate, int b_size, int x, int y, int player, int *las
     {
         *last_captured_x_p = -1;
         *last_captured_y_p = -1;
-        
     }
     return captured_stones;
 }
@@ -591,21 +614,22 @@ int get_long_input(char *buffer)
     cputs(">");
     char input;
     int i;
-    for (i=0; i<LONG_INPUT_BUFFER_SIZE; i++) buffer[i]=' ';
+    for (i = 0; i < LONG_INPUT_BUFFER_SIZE; i++)
+        buffer[i] = ' ';
     int index = 0;
 
     do
     {
         input = getch();
-        if (index < LONG_INPUT_BUFFER_SIZE-1 && input != 0x0 &&
+        if (index < LONG_INPUT_BUFFER_SIZE - 1 && input != 0x0 &&
             input != 0x0d && input != 0x1b)
         {
             putch(input);
             buffer[index] = input;
             index++;
         }
-        
-    } while ((input != 0x0d && input != 0x1b) );
+
+    } while ((input != 0x0d && input != 0x1b));
     buffer[index] = '\0';
     if (input == 0x0d)
         return LONG_INPUT_ENTER;
@@ -615,7 +639,7 @@ int get_long_input(char *buffer)
 
 bool is_valid_savename(const char *name)
 {
-    char* unallowed_keys = "*?/<>:|\"\\";
+    char *unallowed_keys = "*?/<>:|\"\\";
     if (strcspn(name, unallowed_keys) < strlen(name))
         return false;
     else
@@ -635,46 +659,46 @@ void remove_last_spaces_from_savename(char *name)
         else // if it finds anything other than a space the loop will break
             break;
     }
-
 }
 
 bool file_exists(char *name)
 {
-    char filename[64] = {};
+    char filename[64] = {0};
     strcat(filename, name);
     strcat(filename, ".bin");
 
-    FILE* f = fopen(filename, "rb");
+    FILE *f = fopen(filename, "rb");
     if (f == NULL)
         return false;
-    
+
     fclose(f);
     return true;
 }
 
 bool save_game(char *name, int *gamestate, game_var_t *game_var)
 {
-    char filename[64] = {};
+    char filename[64] = {0};
     strcat(filename, name);
     strcat(filename, ".bin");
-    FILE* f = fopen(filename, "wb");
+
+    FILE *f = fopen(filename, "wb");
 
     if (f == NULL)
         return false;
 
     fwrite(game_var, sizeof(game_var_t), 1, f);
-    fwrite(gamestate, sizeof(int), game_var->b_size*game_var->b_size, f);
-    
+    fwrite(gamestate, sizeof(int), game_var->b_size * game_var->b_size, f);
+
     fclose(f);
     return true;
 }
 
-bool load_game(char *name, int** gamestate_p, game_var_t *game_var)
+bool load_game(char *name, int **gamestate_p, game_var_t *game_var)
 {
-    char filename[64] = {};
+    char filename[64] = {0};
     strcat(filename, name);
     strcat(filename, ".bin");
-    FILE* f = fopen(filename, "rb");
+    FILE *f = fopen(filename, "rb");
 
     if (f == NULL)
         return false;
@@ -683,8 +707,8 @@ bool load_game(char *name, int** gamestate_p, game_var_t *game_var)
 
     create_board(gamestate_p, game_var->b_size);
 
-    fread(*gamestate_p, sizeof(int), game_var->b_size*game_var->b_size, f);
-    
+    fread(*gamestate_p, sizeof(int), game_var->b_size * game_var->b_size, f);
+
     fclose(f);
     return true;
 }
@@ -692,13 +716,43 @@ bool load_game(char *name, int** gamestate_p, game_var_t *game_var)
 bool create_board(int **gamestate_p, int b_size)
 {
     free(*gamestate_p);
-    *gamestate_p = (int*)malloc(sizeof(int)*b_size*b_size);
+    *gamestate_p = (int *)malloc(sizeof(int) * b_size * b_size);
     if (*gamestate_p == NULL)
         return false;
-    
+
     int i;
-    for (i = 0; i < b_size*b_size; i++)
+    for (i = 0; i < b_size * b_size; i++)
         (*gamestate_p)[i] = STONE_NO;
 
     return true;
+}
+
+void control_the_cursor(int *gamestate, int b_size, cursor_t *cursor)
+{
+    char input = getch();
+    if (input == SPEC_KEY_DOWN_ARROW) // down arrow
+    {
+        cursor_move(gamestate, b_size, cursor, 0, -1);
+    }
+    else if (input == SPEC_KEY_UP_ARROW) // up arrow
+    {
+        cursor_move(gamestate, b_size, cursor, 0, 1);
+    }
+    else if (input == SPEC_KEY_LEFT_ARROW) // left arrow
+    {
+        cursor_move(gamestate, b_size, cursor, -1, 0);
+    }
+    else if (input == SPEC_KEY_RIGHT_ARROW) // right arrow
+    {
+        cursor_move(gamestate, b_size, cursor, 1, 0);
+    }
+}
+
+
+void new_game(int** gamestate_p, game_var_t* game_var, cursor_t* cursor)
+{
+    reset_game_var(game_var);
+    create_board(gamestate_p, game_var->b_size);
+    cursor_reset(cursor, game_var);
+    redraw_screen(*gamestate_p, game_var->b_size);
 }

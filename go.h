@@ -43,15 +43,16 @@
 #define CURSOR_RED 1
 #define CURSOR_YELLOW 2
 
-#define MESSAGE_NONE -1
-#define MESSAGE_PENDING 0
-#define MESSAGE_NEW_GAME 1
-#define MESSAGE_INVALID_PLACE 2
-#define MESSAGE_NAME_INVALID 3
-#define MESSAGE_FILENAME_INPUT 4
-#define MESSAGE_SAVEFILE_OVERWRITE 5
-#define MESSAGE_GAME_SAVED 6
-#define MESSAGE_GAME_LOADED 7
+#define MESSAGE_NONE -1 // clears message space
+#define MESSAGE_PENDING 0 // "Press <enter> to confirm or <esc> to cancel"
+#define MESSAGE_NEW_GAME 1 // "board: [1]: 9x9   [2]: 13x13 [3]: 19x19 [4]: custom"
+#define MESSAGE_INVALID_PLACE 2 // "You can't place a stone here"
+#define MESSAGE_NAME_INVALID 3 // "That's not a valid filename"
+#define MESSAGE_FILENAME_INPUT 4 // "Enter a valid filename max %d letters"
+#define MESSAGE_SAVEFILE_OVERWRITE 5 // "Savefile will be overwritten <enter> to save <esc> to cancel"
+#define MESSAGE_GAME_SAVED 6 // "Game saved!"
+#define MESSAGE_GAME_LOADED 7 // "Game loaded!"
+#define MESSAGE_HANDICAP_IN_PROGRESS 8  // "Handicap placement mode <enter> to save <esc> to cancel"
 
 #define LONG_INPUT_ENTER 0
 #define LONG_INPUT_ESCAPE 1
@@ -69,14 +70,17 @@ typedef struct
 typedef struct
 {
     int b_size;
+    bool handicap_mode;
     int current_player;
     int last_placed_x;
     int last_placed_y;
     int last_captured_x; // used to enforce the ko rule
     int last_captured_y; // used to enforce the ko rule
-    int black_score;
-    int white_score;
+    float black_score;
+    float white_score;
 } game_var_t;
+
+// #0
 
 /// @brief prints out information about the controls
 void legend_printout();
@@ -86,7 +90,7 @@ void legend_printout();
 /// @param y cursor y position
 /// @param b black's player score
 /// @param w white's player's score
-void down_legend_printout(int x, int y, int b, int w);
+void down_legend_printout(int x, int y, float b, float w);
 
 /// @brief changes the color of the printed text in my set style
 /// @param stone_type which stone's color should be applied
@@ -273,5 +277,10 @@ bool load_game(char *name, int **gamestate_p, game_var_t *game_var);
 /// @param b_size size of the new board
 /// @return false if the malloc failed
 bool create_board(int** gamestate_p, int b_size);
+
+void control_the_cursor(int* gamestate, int b_size, cursor_t* cursor);
+
+void new_game(int** gamestate_p, game_var_t* game_var, cursor_t* cursor);
+
 
 #endif 
