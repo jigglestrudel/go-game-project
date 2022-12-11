@@ -16,7 +16,7 @@ void legend_printout()
     gotoxy(LEGEND_X, LEGEND_Y + 3);
     cputs("(a) (b) (c) (d) (e)");
     gotoxy(LEGEND_X, LEGEND_Y + 4);
-    cputs("(f) (g) (h) () (j) () ()");
+    cputs("(f) (g) (h) (i) (j) (k) ()");
     gotoxy(LEGEND_X, LEGEND_Y + 5);
     cputs("() ()");
     gotoxy(LEGEND_X, LEGEND_Y + 6);
@@ -100,126 +100,132 @@ void change_color(int stone_type, int cursor_color)
     }
 }
 
-void board_tile_printout(int *game_state, int b_size, int x, int y, int cursor_color)
+void board_tile_printout(screen_size_t *scr, int *game_state, int b_size, int x, int y, int cursor_color)
 {
-    gotoxy(BOARD_X + 2 + x * 2, BOARD_Y + 1 + y);
-    switch (game_state[x + y * b_size])
+    if (BOARD_X + x * 2 + scr->board_x_offset  < scr->s_w &&
+        BOARD_Y + y + scr->board_y_offset < scr->s_h &&
+        BOARD_X + x * 2 + scr->board_x_offset  >= BOARD_X &&
+        BOARD_Y + y + scr->board_y_offset >= BOARD_Y)
     {
-    case STONE_NO:
-        change_color(STONE_NO, cursor_color);
-        if (!PRETTY_BOARD_PATTERN)
+        gotoxy(BOARD_X + x * 2 + scr->board_x_offset, BOARD_Y + y + scr->board_y_offset);
+        switch (game_state[x + y * b_size])
         {
-            if (x == 0 && y == 0)
+        case STONE_NO:
+            change_color(STONE_NO, cursor_color);
+            if (!PRETTY_BOARD_PATTERN)
             {
-                putch(CHARACTER_CORNER_TOP_LEFT);
-                change_color(STONE_NO, CURSOR_NONE);
-                putch(CHARACTER_LINE);
-            }
-            else if (x == 0 && y == b_size - 1)
-            {
-                putch(CHARACTER_CORNER_BOTTOM_LEFT);
-                change_color(STONE_NO, CURSOR_NONE);
-                putch(CHARACTER_LINE);
-            }
-            else if (x == b_size - 1 && y == b_size - 1)
-            {
-                putch(CHARACTER_CORNER_BOTTOM_RIGHT);
-                change_color(STONE_NO, CURSOR_NONE);
-                putch(' ');
-            }
-            else if (x == b_size - 1 && y == 0)
-            {
-                putch(CHARACTER_CORNER_TOP_RIGHT);
-                change_color(STONE_NO, CURSOR_NONE);
-                putch(' ');
-            }
-            else if (x == 0)
-            {
-                putch(CHARACTER_EDGE_LEFT);
-                change_color(STONE_NO, CURSOR_NONE);
-                putch(CHARACTER_LINE);
-            }
-            else if (y == 0)
-            {
-                putch(CHARACTER_EDGE_TOP);
-                change_color(STONE_NO, CURSOR_NONE);
-                putch(CHARACTER_LINE);
-            }
-            else if (y == b_size - 1)
-            {
-                putch(CHARACTER_EDGE_BOTTOM);
-                change_color(STONE_NO, CURSOR_NONE);
-                putch(CHARACTER_LINE);
-            }
-            else if (x == b_size - 1)
-            {
-                putch(CHARACTER_EDGE_RIGHT);
-                change_color(STONE_NO, CURSOR_NONE);
-                putch(' ');
+                if (x == 0 && y == 0)
+                {
+                    putch(CHARACTER_CORNER_TOP_LEFT);
+                    change_color(STONE_NO, CURSOR_NONE);
+                    putch(CHARACTER_LINE);
+                }
+                else if (x == 0 && y == b_size - 1)
+                {
+                    putch(CHARACTER_CORNER_BOTTOM_LEFT);
+                    change_color(STONE_NO, CURSOR_NONE);
+                    putch(CHARACTER_LINE);
+                }
+                else if (x == b_size - 1 && y == b_size - 1)
+                {
+                    putch(CHARACTER_CORNER_BOTTOM_RIGHT);
+                    change_color(STONE_NO, CURSOR_NONE);
+                    putch(' ');
+                }
+                else if (x == b_size - 1 && y == 0)
+                {
+                    putch(CHARACTER_CORNER_TOP_RIGHT);
+                    change_color(STONE_NO, CURSOR_NONE);
+                    putch(' ');
+                }
+                else if (x == 0)
+                {
+                    putch(CHARACTER_EDGE_LEFT);
+                    change_color(STONE_NO, CURSOR_NONE);
+                    putch(CHARACTER_LINE);
+                }
+                else if (y == 0)
+                {
+                    putch(CHARACTER_EDGE_TOP);
+                    change_color(STONE_NO, CURSOR_NONE);
+                    putch(CHARACTER_LINE);
+                }
+                else if (y == b_size - 1)
+                {
+                    putch(CHARACTER_EDGE_BOTTOM);
+                    change_color(STONE_NO, CURSOR_NONE);
+                    putch(CHARACTER_LINE);
+                }
+                else if (x == b_size - 1)
+                {
+                    putch(CHARACTER_EDGE_RIGHT);
+                    change_color(STONE_NO, CURSOR_NONE);
+                    putch(' ');
+                }
+                else
+                {
+                    putch(CHARACTER_CROSS_INSIDE);
+                    change_color(STONE_NO, CURSOR_NONE);
+                    putch(CHARACTER_LINE);
+                }
             }
             else
             {
-                putch(CHARACTER_CROSS_INSIDE);
+                if ((x % 2 && y % 2) || (!(x % 2) && !(y % 2)))
+                // creates the checkerboard pattern
+                {
+                    putch(CHARACTER_CHECKERBOARD_DOWN);
+                    putch(CHARACTER_CHECKERBOARD_UP);
+                }
+                else
+                {
+                    putch(CHARACTER_CHECKERBOARD_UP);
+                    putch(CHARACTER_CHECKERBOARD_DOWN);
+                }
+            }
+
+            break;
+
+        case STONE_WHITE:
+            change_color(STONE_WHITE, cursor_color);
+            if (!PRETTY_BOARD_PATTERN)
+            {
+                putch(CHARACTER_STONE);
                 change_color(STONE_NO, CURSOR_NONE);
-                putch(CHARACTER_LINE);
-            }
-        }
-        else
-        {
-            if ((x % 2 && y % 2) || (!(x % 2) && !(y % 2)))
-            // creates the checkerboard pattern
-            {
-                putch(CHARACTER_CHECKERBOARD_DOWN);
-                putch(CHARACTER_CHECKERBOARD_UP);
+                if (x < b_size - 1)
+                    putch(CHARACTER_LINE);
+                else
+                    putch(' ');
             }
             else
             {
-                putch(CHARACTER_CHECKERBOARD_UP);
-                putch(CHARACTER_CHECKERBOARD_DOWN);
+                putch('(');
+                putch(')');
             }
-        }
 
-        break;
+            break;
 
-    case STONE_WHITE:
-        change_color(STONE_WHITE, cursor_color);
-        if (!PRETTY_BOARD_PATTERN)
-        {
-            putch(CHARACTER_STONE);
-            change_color(STONE_NO, CURSOR_NONE);
-            if (x < b_size - 1)
-                putch(CHARACTER_LINE);
+        case STONE_BLACK:
+            change_color(STONE_BLACK, cursor_color);
+            if (!PRETTY_BOARD_PATTERN)
+            {
+                putch(CHARACTER_STONE);
+                change_color(STONE_NO, CURSOR_NONE);
+                if (x < b_size - 1)
+                    putch(CHARACTER_LINE);
+                else
+                    putch(' ');
+            }
             else
-                putch(' ');
-        }
-        else
-        {
-            putch('(');
-            putch(')');
-        }
+            {
+                putch('[');
+                putch(']');
+            }
+            break;
 
-        break;
-
-    case STONE_BLACK:
-        change_color(STONE_BLACK, cursor_color);
-        if (!PRETTY_BOARD_PATTERN)
-        {
-            putch(CHARACTER_STONE);
-            change_color(STONE_NO, CURSOR_NONE);
-            if (x < b_size - 1)
-                putch(CHARACTER_LINE);
-            else
-                putch(' ');
+        default:
+            break;
         }
-        else
-        {
-            putch('[');
-            putch(']');
-        }
-        break;
-
-    default:
-        break;
     }
 }
 
@@ -231,34 +237,50 @@ void border_tile_printout()
     putch(178);
 }
 
-void board_printout(int *gamestate, int b_size)
+void board_printout(screen_size_t *scr, int *gamestate, int b_size)
 {
     int x, y, i;
 
+    if (scr->board_y_offset > 0)
+    {
     gotoxy(BOARD_X, BOARD_Y);
 
-    for (i = 0; i < b_size + 2; i++)
-    {
-        border_tile_printout();
+        for (i = 0; i < b_size+2 && BOARD_X + i*2 < scr->s_w; i++)
+        {
+            border_tile_printout();
+        }
     }
 
     for (y = 0; y < b_size; y++)
     {
-        gotoxy(BOARD_X, BOARD_Y + y + 1);
-
-        border_tile_printout();
+        if (scr->board_x_offset > 0 &&
+            BOARD_Y + y  + scr->board_y_offset < scr->s_h &&
+            BOARD_Y + y  + scr->board_y_offset >= BOARD_Y)
+        {
+            gotoxy(BOARD_X, BOARD_Y + y + scr->board_y_offset);
+            border_tile_printout();
+        }
 
         for (x = 0; x < b_size; x++)
         {
-            board_tile_printout(gamestate, b_size, x, y, CURSOR_NONE);
+            board_tile_printout(scr, gamestate, b_size, x, y, CURSOR_NONE);
         }
 
-        border_tile_printout();
+        if (BOARD_X + x * 2 + scr->board_x_offset < scr->s_w &&
+            BOARD_Y + y  + scr->board_y_offset < scr->s_h &&
+            BOARD_Y + y  + scr->board_y_offset >= BOARD_Y)
+
+            border_tile_printout();
     }
-    gotoxy(BOARD_X, BOARD_Y + b_size + 1);
-    for (i = 0; i < b_size + 2; i++)
+
+    if (BOARD_Y + b_size + scr->board_y_offset < scr->s_h)
     {
-        border_tile_printout();
+        gotoxy(BOARD_X, BOARD_Y + b_size + scr->board_y_offset);
+
+        for (i = 0; i < b_size+2 && BOARD_X + i*2 < scr->s_w; i++)
+        {
+            border_tile_printout();
+        }
     }
 }
 
@@ -274,30 +296,35 @@ void reset_game_var(game_var_t *game_var)
     game_var->handicap_mode = false;
 }
 
-void redraw_screen(int *gamestate, int b_size)
+void redraw_screen(screen_size_t *scr, int *gamestate, int b_size)
 {
     textbackground(BLACK);
     textcolor(WHITE);
     clrscr();
     legend_printout();
-    board_printout(gamestate, b_size);
+    board_printout(scr, gamestate, b_size);
 }
 
-void cursor_draw(int *gamestate, int b_size, cursor_t *cur)
+void cursor_draw(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur)
 {
-    board_tile_printout(gamestate, b_size, cur->x, cur->y, cur->color);
+    board_tile_printout(scr, gamestate, b_size, cur->x, cur->y, cur->color);
 }
 
-void cursor_move(int *gamestate, int b_size, cursor_t *cur, int dx, int dy)
+void cursor_move(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, int dx, int dy)
 {
 
-    board_tile_printout(gamestate, b_size, cur->x, cur->y, CURSOR_NONE);
+    board_tile_printout(scr, gamestate, b_size, cur->x, cur->y, CURSOR_NONE);
 
     // limits the cursor position to the board size
     cur->x = (cur->x + dx >= b_size) ? b_size - 1 : ((cur->x + dx) < 0 ? 0 : (cur->x + dx));
     cur->y = (cur->y + dy >= b_size) ? b_size - 1 : ((cur->y + dy) < 0 ? 0 : (cur->y + dy));
 
-    cursor_draw(gamestate, b_size, cur);
+    if (BOARD_X + 2 + cur->x*2 + scr->board_x_offset +2  >  scr->s_w) scr->board_x_offset -= 2;
+    if (BOARD_X  + cur->x*2 + scr->board_x_offset  <  BOARD_X+1) scr->board_x_offset += 2;
+    if (BOARD_Y + 1 + cur->y + scr->board_y_offset +1  >  scr->s_h) scr->board_y_offset -= 1;
+    if (BOARD_Y  + cur->y + scr->board_y_offset  <  BOARD_Y+1) scr->board_y_offset += 1;
+
+    cursor_draw(scr, gamestate, b_size, cur);
 }
 
 void cursor_reset(cursor_t *cur, game_var_t *game_var)
@@ -307,16 +334,16 @@ void cursor_reset(cursor_t *cur, game_var_t *game_var)
     cur->color = CURSOR_GREEN;
 }
 
-void place_stone(int *gamestate, int b_size, cursor_t *cur, int player)
+void place_stone(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, int player)
 {
     gamestate[cur->x + b_size * cur->y] = player;
-    cursor_draw(gamestate, b_size, cur);
+    cursor_draw(scr, gamestate, b_size, cur);
 }
 
-void remove_stone(int *gamestate, int b_size, int x, int y)
+void remove_stone(screen_size_t *scr, int *gamestate, int b_size, int x, int y)
 {
     gamestate[x + y * b_size] = STONE_NO;
-    board_tile_printout(gamestate, b_size, x, y, CURSOR_NONE);
+    board_tile_printout(scr, gamestate, b_size, x, y, CURSOR_NONE);
 }
 
 void turn_printout(int player)
@@ -507,17 +534,17 @@ bool will_kill_itself(int *gamestate, int b_size, int x, int y, int player)
     return false;
 }
 
-void capture_surrounding_chains(int *gamestate, int b_size, int x, int y, game_var_t *game_var)
+void capture_surrounding_chains(screen_size_t *scr, int *gamestate, int b_size, int x, int y, game_var_t *game_var)
 {
     int score = 0;
     if ((x - 1) >= 0 && gamestate[(x - 1) + y * b_size] == game_var->current_player)
-        score += capture_chain(gamestate, b_size, x - 1, y, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
+        score += capture_chain(scr, gamestate, b_size, x - 1, y, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
     if ((x + 1) < b_size && gamestate[(x + 1) + y * b_size] == game_var->current_player)
-        score += capture_chain(gamestate, b_size, x + 1, y, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
+        score += capture_chain(scr, gamestate, b_size, x + 1, y, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
     if ((y - 1) >= 0 && gamestate[x + (y - 1) * b_size] == game_var->current_player)
-        score += capture_chain(gamestate, b_size, x, y - 1, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
+        score += capture_chain(scr, gamestate, b_size, x, y - 1, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
     if ((y + 1) < b_size && gamestate[x + (y + 1) * b_size] == game_var->current_player)
-        score += capture_chain(gamestate, b_size, x, y + 1, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
+        score += capture_chain(scr, gamestate, b_size, x, y + 1, game_var->current_player, &(game_var->last_captured_x), &(game_var->last_captured_y));
 
     if (game_var->current_player == STONE_BLACK) // current black turn means white is capturing
         game_var->white_score += score;
@@ -577,7 +604,7 @@ bool check_chain_for_liberties(int *gamestate, int b_size, int x, int y, int pla
     return !result;
 }
 
-int capture_chain(int *gamestate, int b_size, int x, int y, int player, int *last_captured_x_p, int *last_captured_y_p)
+int capture_chain(screen_size_t *scr, int *gamestate, int b_size, int x, int y, int player, int *last_captured_x_p, int *last_captured_y_p)
 {
     bool *counted_stones = (bool *)malloc(sizeof(bool) * b_size * b_size);
     int i, j;
@@ -591,7 +618,7 @@ int capture_chain(int *gamestate, int b_size, int x, int y, int player, int *las
             for (j = 0; j < b_size; j++)
                 if (counted_stones[i + j * b_size])
                 {
-                    remove_stone(gamestate, b_size, i, j);
+                    remove_stone(scr, gamestate, b_size, i, j);
                     captured_stones++;
                     *last_captured_x_p = i;
                     *last_captured_y_p = j;
@@ -727,32 +754,38 @@ bool create_board(int **gamestate_p, int b_size)
     return true;
 }
 
-void control_the_cursor(int *gamestate, int b_size, cursor_t *cursor)
+void control_the_cursor(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cursor)
 {
     char input = getch();
     if (input == SPEC_KEY_DOWN_ARROW) // down arrow
     {
-        cursor_move(gamestate, b_size, cursor, 0, -1);
+        cursor_move(scr, gamestate, b_size, cursor, 0, -1);
     }
     else if (input == SPEC_KEY_UP_ARROW) // up arrow
     {
-        cursor_move(gamestate, b_size, cursor, 0, 1);
+        cursor_move(scr, gamestate, b_size, cursor, 0, 1);
     }
     else if (input == SPEC_KEY_LEFT_ARROW) // left arrow
     {
-        cursor_move(gamestate, b_size, cursor, -1, 0);
+        cursor_move(scr, gamestate, b_size, cursor, -1, 0);
     }
     else if (input == SPEC_KEY_RIGHT_ARROW) // right arrow
     {
-        cursor_move(gamestate, b_size, cursor, 1, 0);
+        cursor_move(scr, gamestate, b_size, cursor, 1, 0);
     }
 }
 
-
-void new_game(int** gamestate_p, game_var_t* game_var, cursor_t* cursor)
+void new_game(screen_size_t *scr, int **gamestate_p, game_var_t *game_var, cursor_t *cursor)
 {
+    reset_offsets(scr);
     reset_game_var(game_var);
     create_board(gamestate_p, game_var->b_size);
     cursor_reset(cursor, game_var);
-    redraw_screen(*gamestate_p, game_var->b_size);
+    redraw_screen(scr, *gamestate_p, game_var->b_size);
+}
+
+void reset_offsets(screen_size_t *scr)
+{
+    scr->board_x_offset = 2;
+    scr->board_y_offset = 1;
 }

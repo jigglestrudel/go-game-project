@@ -31,7 +31,7 @@
 
 #define BOARD_X 40
 #define BOARD_Y 3
-#define BOARD_SIZE 13
+#define BOARD_SIZE 50
 #define PRETTY_BOARD_PATTERN 1 // 0 for a traditional board pattern
 
 #define STONE_NO 0
@@ -80,7 +80,14 @@ typedef struct
     float white_score;
 } game_var_t;
 
-// #0
+/// @brief a struct containing info about window's size and board's offsets
+typedef struct 
+{
+    int s_w;
+    int s_h;
+    int board_x_offset;
+    int board_y_offset;
+} screen_size_t;
 
 /// @brief prints out information about the controls
 void legend_printout();
@@ -103,7 +110,7 @@ void change_color(int stone_type, int cursor_color);
 /// @param x the first coordinate of the tile
 /// @param y the second coordinate of the tile
 /// @param cursor_color applying the cursor's highlight (default none)
-void board_tile_printout(int *gamestate, int b_size, int x, int y, int cursor_color);
+void board_tile_printout(screen_size_t *scr, int *game_state, int b_size, int x, int y, int cursor_color);
 
 /// @brief prints out a cosmetic border tile
 void border_tile_printout();
@@ -111,12 +118,12 @@ void border_tile_printout();
 /// @brief function to print out the whole board with all the tiles
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
 /// @param b_size size of the board
-void board_printout(int *gamestate, int b_size);
+void board_printout(screen_size_t *scr, int *gamestate, int b_size);
 
 /// @brief redraws the whole screen
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
 /// @param b_size size of the board
-void redraw_screen(int *gamestate, int b_size);
+void redraw_screen(screen_size_t *scr, int *gamestate, int b_size);
 
 /// @brief prints out information about which player's turn it is above the board
 /// @param player the player to print the message about
@@ -131,7 +138,7 @@ void message_printout(int message_id);
 /// @param cur pointer to the cursor variable
 /// @param dx the distance the cursor should be moved on the x axis
 /// @param dy the distance the cursor should be moved on the y axis
-void cursor_move(int *gamestate, int b_size, cursor_t *cur, int dx, int dy);
+void cursor_move(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, int dx, int dy);
 
 /// @brief defaults the cursor
 /// @param cur pointer to the cursor struct
@@ -143,20 +150,20 @@ void cursor_reset(cursor_t* cur, game_var_t* game_var);
 /// @param b_size size of the board
 /// @param cur pointer to the cursor variable
 /// @param player the player's stone color
-void place_stone(int *gamestate, int b_size, cursor_t *cur, int player);
+void place_stone(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, int player);
 
 /// @brief removes a stone and redraws the tile
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
 /// @param b_size size of the board
 /// @param x the first coordinate of the tile
 /// @param y the second coordinate of the tile
-void remove_stone(int *gamestate, int b_size, int x, int y);
+void remove_stone(screen_size_t *scr, int *gamestate, int b_size, int x, int y);
 
 /// @brief redraws the cursor on the tile it points to
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
 /// @param b_size size of the board
 /// @param cur pointer to the cursor variable
-void cursor_draw(int *gamestate, int b_size, cursor_t *cur);
+void cursor_draw(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur);
 
 
 /// @brief checks whether the player can place a stone in (x, y)
@@ -203,7 +210,7 @@ bool chain_check_suffocation(int *gamestate, int b_size, bool *counted_stones, i
 /// @param x the first coordinate of the tile
 /// @param y the second coordinate of the tile
 /// @param game_var struct with game variables
-void capture_surrounding_chains(int *gamestate, int b_size, int x, int y, game_var_t* game_var);
+void capture_surrounding_chains(screen_size_t *scr, int *gamestate, int b_size, int x, int y, game_var_t* game_var);
 
 /// @brief checks if a stone placed on (x,y) by the player would be immedietly captured
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
@@ -223,7 +230,7 @@ bool will_kill_itself(int *gamestate, int b_size, int x, int y, int player);
 /// @param last_captured_x_p pointer to the variable storing the captured stone (ko rule)
 /// @param last_captured_y_p pointer to the variable storing the captured stone (ko rule)
 /// @return the number of captured stones
-int capture_chain(int *gamestate, int b_size, int x, int y, int player, int *last_captured_x_p, int *last_captured_y_p);
+int capture_chain(screen_size_t *scr, int *gamestate, int b_size, int x, int y, int player, int *last_captured_x_p, int *last_captured_y_p);
 
 /// @brief checks if the player's stone on (x, y) is in a chain that has liberties
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
@@ -278,9 +285,10 @@ bool load_game(char *name, int **gamestate_p, game_var_t *game_var);
 /// @return false if the malloc failed
 bool create_board(int** gamestate_p, int b_size);
 
-void control_the_cursor(int* gamestate, int b_size, cursor_t* cursor);
+void control_the_cursor(screen_size_t *scr, int* gamestate, int b_size, cursor_t* cursor);
 
-void new_game(int** gamestate_p, game_var_t* game_var, cursor_t* cursor);
+void new_game(screen_size_t *scr, int** gamestate_p, game_var_t* game_var, cursor_t* cursor);
 
+void reset_offsets(screen_size_t *scr);
 
 #endif 

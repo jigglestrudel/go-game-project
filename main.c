@@ -10,6 +10,7 @@
 
 int main()
 {
+    _wscroll = 0;
     settitle("Tomasz Krepa 193047");
 
     _setcursortype(_NOCURSOR);
@@ -33,12 +34,25 @@ int main()
         return 1;
     }
 
-    game_var->b_size = BOARD_SIZE;
-    new_game(&board, game_var, cursor);
+    struct text_info info;
+    gettextinfo(&info);
+    screen_size_t* screen_info = (screen_size_t*)malloc(sizeof(screen_size_t));
+    if (screen_info == NULL)
+    {
+        return 1;
+    }
 
-    redraw_screen(board, game_var->b_size);
+    screen_info->s_w = info.screenwidth;
+    screen_info->s_h = info.screenheight;
+    screen_info->board_x_offset = 2;
+    screen_info->board_y_offset = 1;
+
+    game_var->b_size = BOARD_SIZE;
+    new_game(screen_info, &board, game_var, cursor);
+
+    redraw_screen(screen_info, board, game_var->b_size);
     turn_printout(game_var->current_player);
-    cursor_draw(board, game_var->b_size, cursor);
+    cursor_draw(screen_info, board, game_var->b_size, cursor);
 
     bool valid_position = true;
     bool valid_name = true;
@@ -48,14 +62,17 @@ int main()
     
     bool handicap_placing = false;
 
-    // #1
+    int old_xoff = 0, old_yoff = 0;
 
     while (game_running)
     {
-        //#2
-        
+
+        if (old_xoff != screen_info->board_x_offset || old_yoff != screen_info->board_y_offset)
+            redraw_screen(screen_info, board, game_var->b_size);
+        old_xoff = screen_info->board_x_offset;
+        old_yoff = screen_info->board_y_offset;
         // GAME UPDATE
-        capture_surrounding_chains(board, game_var->b_size, game_var->last_placed_x, game_var->last_placed_y, game_var);
+        capture_surrounding_chains(screen_info, board, game_var->b_size, game_var->last_placed_x, game_var->last_placed_y, game_var);
 
         //  CURSOR UPDATE
         valid_position = is_valid_position(board, game_var->b_size, cursor->x, cursor->y, game_var->current_player, game_var->last_captured_x, game_var->last_captured_y);
@@ -67,7 +84,7 @@ int main()
         {
             cursor->color = CURSOR_GREEN;
         }
-        cursor_draw(board, game_var->b_size, cursor);
+        cursor_draw(screen_info, board, game_var->b_size, cursor);
 
         //  MESSAGE UPDATES
         turn_printout(game_var->current_player);
@@ -99,7 +116,7 @@ int main()
         // checking for special characters (arrows)
         if (input == 0)
         {
-            control_the_cursor(board, game_var->b_size, cursor);
+            control_the_cursor(screen_info, board, game_var->b_size, cursor);
         }
         else
         {
@@ -109,7 +126,7 @@ int main()
                 if (valid_position)
                 {
                     cursor->color = CURSOR_YELLOW;
-                    place_stone(board, game_var->b_size, cursor, game_var->current_player);
+                    place_stone(screen_info, board, game_var->b_size, cursor, game_var->current_player);
                     do
                     {
                         message_printout(MESSAGE_PENDING);
@@ -130,7 +147,7 @@ int main()
                             game_var->current_player = STONE_BLACK;
                     }
                     else
-                        remove_stone(board, game_var->b_size, cursor->x, cursor->y);
+                        remove_stone(screen_info, board, game_var->b_size, cursor->x, cursor->y);
                 }
 
                 break;
@@ -159,7 +176,7 @@ int main()
                     break;
                 }
 
-                new_game(&board, game_var, cursor);
+                new_game(screen_info, &board, game_var, cursor);
 
                 break;
 
@@ -187,7 +204,7 @@ int main()
                     else
                         valid_name = false;
                 }
-                redraw_screen(board, game_var->b_size);
+                redraw_screen(screen_info, board, game_var->b_size);
                 break;
 
             case 'l':
@@ -204,7 +221,7 @@ int main()
                     }
                 }
                 cursor_reset(cursor, game_var);
-                redraw_screen(board, game_var->b_size);
+                redraw_screen(screen_info, board, game_var->b_size);
                 break;
 
             case 'q':
@@ -212,7 +229,7 @@ int main()
                 break;
 
             case 'h':
-                new_game(&board, game_var, cursor);
+                new_game(screen_info, &board, game_var, cursor);
                 message_printout(MESSAGE_HANDICAP_IN_PROGRESS);
                 turn_printout(STONE_NO);
                 cursor->color = CURSOR_YELLOW;
@@ -221,12 +238,12 @@ int main()
                     input = getch();
                     if (input == 0)
                     {
-                        control_the_cursor(board, game_var->b_size, cursor);
+                        control_the_cursor(screen_info, board, game_var->b_size, cursor);
                     }
                     else
                     {
                         if (input == 'i')
-                            place_stone(board, game_var->b_size, cursor, STONE_BLACK);
+                            place_stone(screen_info, board, game_var->b_size, cursor, STONE_BLACK);
                     }
 
                 } while (input != KEY_ENTER && input != KEY_ESCAPE);
@@ -236,7 +253,7 @@ int main()
                     game_var->handicap_mode = true;
                     game_var->current_player = STONE_WHITE;
                 }
-                else new_game(&board, game_var, cursor);
+                else new_game(screen_info, &board, game_var, cursor);
                 break;
             }
         }
@@ -244,6 +261,7 @@ int main()
 
     free(board);
     free(cursor);
+    free(screen_info);
 
     _setcursortype(_NORMALCURSOR);
     textbackground(BLACK);
