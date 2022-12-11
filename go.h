@@ -30,7 +30,7 @@
 #define LEGEND_FULL_HEIGHT 22
 
 #define BOARD_X 40
-#define BOARD_Y 3   // needs to be bigger than 1
+#define BOARD_Y 3   // needs to be no less than 2
 #define BOARD_SIZE 19
 #define PRETTY_BOARD_PATTERN 0 // 0 for a traditional board pattern
 
@@ -53,10 +53,19 @@
 #define MESSAGE_GAME_SAVED 6 // "Game saved!"
 #define MESSAGE_GAME_LOADED 7 // "Game loaded!"
 #define MESSAGE_HANDICAP_IN_PROGRESS 8  // "Handicap placement mode <enter> to save <esc> to cancel"
+#define MESSAGE_BLACK_VICOTRY 9 // "Black wins! press <any> to start a new game"
+#define MESSAGE_WHITE_VICOTRY 10 // "White wins! press <any> to start a new game"
+#define MESSAGE_DRAW 11 // "Draw! press <any> to start a new game"
 
 #define LONG_INPUT_ENTER 0
 #define LONG_INPUT_ESCAPE 1
 #define LONG_INPUT_BUFFER_SIZE 32
+
+#define TERRITORY_UNCOUNTED 0
+#define TERRITORY_COUNTED 1
+#define TERRITORY_BLACK 3
+#define TERRITORY_WHITE 2
+#define TERRITORY_NOBODY 4
 
 /// @brief a struct containing information about cursor's position and color
 typedef struct
@@ -112,7 +121,7 @@ void change_color(int stone_type, int cursor_color);
 /// @param x the first coordinate of the tile
 /// @param y the second coordinate of the tile
 /// @param cursor_color applying the cursor's highlight (default none)
-void board_tile_printout(screen_size_t *scr, int *game_state, int b_size, int x, int y, int cursor_color);
+void board_tile_printout(screen_size_t *scr, char *game_state, int b_size, int x, int y, int cursor_color);
 
 /// @brief prints out a cosmetic border tile
 void border_tile_printout();
@@ -121,13 +130,13 @@ void border_tile_printout();
 /// @param scr a struct containing info about the screen (required for drawing)
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
 /// @param b_size size of the board
-void board_printout(screen_size_t *scr, int *gamestate, int b_size);
+void board_printout(screen_size_t *scr, char *gamestate, int b_size);
 
 /// @brief redraws the whole screen
 /// @param scr a struct containing info about the screen (required for drawing)
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
 /// @param b_size size of the board
-void redraw_screen(screen_size_t *scr, int *gamestate, int b_size);
+void redraw_screen(screen_size_t *scr, char *gamestate, int b_size);
 
 /// @brief prints out information about which player's turn it is above the board
 /// @param player the player to print the message about
@@ -143,7 +152,7 @@ void message_printout(int message_id);
 /// @param cur pointer to the cursor variable
 /// @param dx the distance the cursor should be moved on the x axis
 /// @param dy the distance the cursor should be moved on the y axis
-void cursor_move(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, int dx, int dy);
+void cursor_move(screen_size_t *scr, char *gamestate, int b_size, cursor_t *cur, int dx, int dy);
 
 /// @brief defaults the cursor
 /// @param cur pointer to the cursor struct
@@ -156,7 +165,7 @@ void cursor_reset(cursor_t* cur, game_var_t* game_var);
 /// @param b_size size of the board
 /// @param cur pointer to the cursor variable
 /// @param player the player's stone color
-void place_stone(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, int player);
+void place_stone(screen_size_t *scr, char *gamestate, int b_size, cursor_t *cur, int player);
 
 /// @brief removes a stone and redraws the tile
 /// @param scr a struct containing info about the screen (required for drawing)
@@ -164,14 +173,14 @@ void place_stone(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, 
 /// @param b_size size of the board
 /// @param x the first coordinate of the tile
 /// @param y the second coordinate of the tile
-void remove_stone(screen_size_t *scr, int *gamestate, int b_size, int x, int y);
+void remove_stone(screen_size_t *scr, char *gamestate, int b_size, int x, int y);
 
 /// @brief redraws the cursor on the tile it points to
 /// @param scr a struct containing info about the screen (required for drawing)
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
 /// @param b_size size of the board
 /// @param cur pointer to the cursor variable
-void cursor_draw(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur);
+void cursor_draw(screen_size_t *scr, char *gamestate, int b_size, cursor_t *cur);
 
 
 /// @brief checks whether the player can place a stone in (x, y)
@@ -183,7 +192,7 @@ void cursor_draw(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur);
 /// @param stone_x stone's x captured in the last round (ko rule)
 /// @param stone_y stone's y captured in the last round (ko rule)
 /// @return true if a position fullfills the rules else false
-bool is_valid_position(int *gamestate, int b_size, int x, int y, int player, int stone_x, int stone_y);
+bool is_valid_position(char *gamestate, int b_size, int x, int y, int player, int stone_x, int stone_y);
 
 /// @brief chekcs whether the tile has liberties for the player's stone
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
@@ -191,7 +200,7 @@ bool is_valid_position(int *gamestate, int b_size, int x, int y, int player, int
 /// @param x the first coordinate of the tile
 /// @param y the second coordinate of the tile
 /// @return if a stone of this color would have liberties in this place on the board
-bool has_liberties(int *gamestate, int b_size, int x, int y);
+bool has_liberties(char *gamestate, int b_size, int x, int y);
 
 /// @brief checks whether or not a move would be an obvious suicide
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
@@ -200,7 +209,7 @@ bool has_liberties(int *gamestate, int b_size, int x, int y);
 /// @param y the second coordinate of the tile
 /// @param player the player's stone color
 /// @return if the stone placed on the tile would kill any of opponents stones
-bool can_kill_surroundings(int *gamestate, int b_size, int x, int y, int player);
+bool can_kill_surroundings(char *gamestate, int b_size, int x, int y, int player);
 
 /// @brief recursive function calculating the liberties of a chain of stones
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
@@ -210,7 +219,7 @@ bool can_kill_surroundings(int *gamestate, int b_size, int x, int y, int player)
 /// @param y the second coordinate of the tile
 /// @param player the player's stone color
 /// @return true if the chain doesn't have liberties, false - if it has them
-bool chain_check_suffocation(int *gamestate, int b_size, bool *counted_stones, int x, int y, int player);
+bool chain_check_suffocation(char *gamestate, int b_size, bool *counted_stones, int x, int y, int player);
 
 /// @brief function removing surrounding stones in chains with no liberties
 /// @param scr a struct containing info about the screen (required for drawing)
@@ -219,7 +228,7 @@ bool chain_check_suffocation(int *gamestate, int b_size, bool *counted_stones, i
 /// @param x the first coordinate of the tile
 /// @param y the second coordinate of the tile
 /// @param game_var struct with game variables
-void capture_surrounding_chains(screen_size_t *scr, int *gamestate, int b_size, int x, int y, game_var_t* game_var);
+void capture_surrounding_chains(screen_size_t *scr, char *gamestate, int b_size, int x, int y, game_var_t* game_var);
 
 /// @brief checks if a stone placed on (x,y) by the player would be immedietly captured
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
@@ -228,7 +237,7 @@ void capture_surrounding_chains(screen_size_t *scr, int *gamestate, int b_size, 
 /// @param y the second coordinate of the tile
 /// @param player the player's stone color
 /// @return true if (x, y) is a suicidal position for the player
-bool will_kill_itself(int *gamestate, int b_size, int x, int y, int player);
+bool will_kill_itself(char *gamestate, int b_size, int x, int y, int player);
 
 /// @brief checks a chain starting in (x,y) and removes it if it doesnt have any liberties
 /// @param scr a struct containing info about the screen (required for drawing)
@@ -240,7 +249,7 @@ bool will_kill_itself(int *gamestate, int b_size, int x, int y, int player);
 /// @param last_captured_x_p pointer to the variable storing the captured stone (ko rule)
 /// @param last_captured_y_p pointer to the variable storing the captured stone (ko rule)
 /// @return the number of captured stones
-int capture_chain(screen_size_t *scr, int *gamestate, int b_size, int x, int y, int player, int *last_captured_x_p, int *last_captured_y_p);
+int capture_chain(screen_size_t *scr, char *gamestate, int b_size, int x, int y, int player, int *last_captured_x_p, int *last_captured_y_p);
 
 /// @brief checks if the player's stone on (x, y) is in a chain that has liberties
 /// @param gamestate pointer to the one-dimensional intiger array containing the placed stones
@@ -249,7 +258,7 @@ int capture_chain(screen_size_t *scr, int *gamestate, int b_size, int x, int y, 
 /// @param y the second coordinate of the tile
 /// @param player the player's stone color
 /// @return true - when chain has a liberty, false - when a chain doesn't have a liberty
-bool check_chain_for_liberties(int *gamestate, int b_size, int x, int y, int player);
+bool check_chain_for_liberties(char *gamestate, int b_size, int x, int y, int player);
 
 /// @brief gets a string from the user
 /// @param buffer buffer to store the input to
@@ -270,7 +279,7 @@ void remove_last_spaces_from_savename(char *name);
 /// @param gamestate the one-dimensional array holding the game state
 /// @param game_var game variables struct
 /// @return true if saving succeeded
-bool save_game(char* name, int* gamestate, game_var_t* game_var);
+bool save_game(char* name, char* gamestate, game_var_t* game_var);
 
 /// @brief resets game variables (all but b_size) to default
 /// @param game_var game_var_t struct of game variables
@@ -286,27 +295,27 @@ bool file_exists(char* name);
 /// @param gamestate_p pointer to the one-dimensional array holding the game state
 /// @param game_var game variables struct
 /// @return true if loading succeeded
-bool load_game(char *name, int **gamestate_p, game_var_t *game_var);
+bool load_game(char *name, char **gamestate_p, game_var_t *game_var);
 
 /// @brief creates a game board of the desired size
 /// @param gamestate_p pointer pointer to the array storing the game state
 /// @param b_size size of the new board
 /// @return false if the malloc failed
-bool create_board(int** gamestate_p, int b_size);
+bool create_board(char** gamestate_p, int b_size);
 
 /// @brief a function moving the cursor using the arrow keys
 /// @param scr a struct containing info about the screen (required for drawing)
 /// @param gamestate one-dimensional array holding the game state
 /// @param b_size size of the board
 /// @param cursor pointer to the cursor struct
-void control_the_cursor(screen_size_t *scr, int* gamestate, int b_size, cursor_t* cursor);
+void control_the_cursor(screen_size_t *scr, char* gamestate, int b_size, cursor_t* cursor);
 
 /// @brief creates a new game and redraws the screen
 /// @param scr a struct containing info about the screen (required for drawing)
 /// @param gamestate_p pointer pointer to the array storing the game state
 /// @param game_var game variables struct
 /// @param cursor pointer to the cursor struct
-void new_game(screen_size_t *scr, int** gamestate_p, game_var_t* game_var, cursor_t* cursor);
+void new_game(screen_size_t *scr, char** gamestate_p, game_var_t* game_var, cursor_t* cursor);
 
 /// @brief resets the board drawing offsets
 /// @param scr a struct containing info about the screen 
@@ -315,8 +324,6 @@ void reset_offsets(screen_size_t *scr);
 /// @brief calculates the total score for the players
 /// @param gamestate array storing the game state
 /// @param game_var game variables struct
-void calculate_score(int* gamestate, game_var_t* game_var);
-
-int assign_territory(int* gamestate, bool* counted_spaces, game_var_t* game_var, int x, int y);
+void calculate_score(char* gamestate, game_var_t* game_var);
 
 #endif 

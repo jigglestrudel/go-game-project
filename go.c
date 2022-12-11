@@ -16,9 +16,7 @@ void legend_printout()
     gotoxy(LEGEND_X, LEGEND_Y + 3);
     cputs("(a) (b) (c) (d) (e)");
     gotoxy(LEGEND_X, LEGEND_Y + 4);
-    cputs("(f) (g) (h) (i) (j) (k) ()");
-    gotoxy(LEGEND_X, LEGEND_Y + 5);
-    cputs("() ()");
+    cputs("(f) (g) (h) (i) (j) (k) (l)");
     gotoxy(LEGEND_X, LEGEND_Y + 6);
     cputs("Keys:");
     gotoxy(LEGEND_X, LEGEND_Y + 7);
@@ -46,6 +44,8 @@ void legend_printout()
 void down_legend_printout(int x, int y, float b, float w)
 {
     char txt[32];
+    textcolor(WHITE);
+    textbackground(BLACK);
     gotoxy(LEGEND_X, LEGEND_Y + LEGEND_HEIGHT + 1);
     sprintf(txt, "position: x =%3d, y =%3d", x, y);
     cputs(txt);
@@ -100,7 +100,7 @@ void change_color(int stone_type, int cursor_color)
     }
 }
 
-void board_tile_printout(screen_size_t *scr, int *game_state, int b_size, int x, int y, int cursor_color)
+void board_tile_printout(screen_size_t *scr, char *game_state, int b_size, int x, int y, int cursor_color)
 {
     if (BOARD_X + x * 2 + scr->board_x_offset < scr->right_border &&
         BOARD_Y + y + scr->board_y_offset < scr->s_h &&
@@ -237,7 +237,7 @@ void border_tile_printout()
     putch(178);
 }
 
-void board_printout(screen_size_t *scr, int *gamestate, int b_size)
+void board_printout(screen_size_t *scr, char *gamestate, int b_size)
 {
     int x, y, i;
 
@@ -296,7 +296,7 @@ void reset_game_var(game_var_t *game_var)
     game_var->handicap_mode = false;
 }
 
-void redraw_screen(screen_size_t *scr, int *gamestate, int b_size)
+void redraw_screen(screen_size_t *scr, char *gamestate, int b_size)
 {
     textbackground(BLACK);
     textcolor(WHITE);
@@ -305,12 +305,12 @@ void redraw_screen(screen_size_t *scr, int *gamestate, int b_size)
     board_printout(scr, gamestate, b_size);
 }
 
-void cursor_draw(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur)
+void cursor_draw(screen_size_t *scr, char *gamestate, int b_size, cursor_t *cur)
 {
     board_tile_printout(scr, gamestate, b_size, cur->x, cur->y, cur->color);
 }
 
-void cursor_move(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, int dx, int dy)
+void cursor_move(screen_size_t *scr, char *gamestate, int b_size, cursor_t *cur, int dx, int dy)
 {
 
     board_tile_printout(scr, gamestate, b_size, cur->x, cur->y, CURSOR_NONE);
@@ -319,13 +319,13 @@ void cursor_move(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, 
     cur->x = (cur->x + dx >= b_size) ? b_size - 1 : ((cur->x + dx) < 0 ? 0 : (cur->x + dx));
     cur->y = (cur->y + dy >= b_size) ? b_size - 1 : ((cur->y + dy) < 0 ? 0 : (cur->y + dy));
 
-    if (BOARD_X + 2 + cur->x * 2 + scr->board_x_offset + 2 > scr->right_border)
+    while (BOARD_X + 2 + cur->x * 2 + scr->board_x_offset + 2 > scr->right_border)
         scr->board_x_offset -= 2;
-    if (BOARD_X + cur->x * 2 + scr->board_x_offset < BOARD_X + 1)
+    while (BOARD_X + cur->x * 2 + scr->board_x_offset - 2 < BOARD_X)
         scr->board_x_offset += 2;
-    if (BOARD_Y + 1 + cur->y + scr->board_y_offset + 1 > scr->s_h)
+    while (BOARD_Y + 1 + cur->y + scr->board_y_offset + 1 > scr->s_h)
         scr->board_y_offset -= 1;
-    if (BOARD_Y + cur->y + scr->board_y_offset < BOARD_Y + 1)
+    while (BOARD_Y + cur->y + scr->board_y_offset - 1 < BOARD_Y)
         scr->board_y_offset += 1;
 
     cursor_draw(scr, gamestate, b_size, cur);
@@ -338,13 +338,13 @@ void cursor_reset(cursor_t *cur, game_var_t *game_var)
     cur->color = CURSOR_GREEN;
 }
 
-void place_stone(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cur, int player)
+void place_stone(screen_size_t *scr, char *gamestate, int b_size, cursor_t *cur, int player)
 {
     gamestate[cur->x + b_size * cur->y] = player;
     cursor_draw(scr, gamestate, b_size, cur);
 }
 
-void remove_stone(screen_size_t *scr, int *gamestate, int b_size, int x, int y)
+void remove_stone(screen_size_t *scr, char *gamestate, int b_size, int x, int y)
 {
     gamestate[x + y * b_size] = STONE_NO;
     board_tile_printout(scr, gamestate, b_size, x, y, CURSOR_NONE);
@@ -379,9 +379,9 @@ void message_printout(int message_id)
     case MESSAGE_NONE:
         textcolor(WHITE);
         textbackground(BLACK);
-        cputs("                               ");
+        cputs("                                 ");
         gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
-        cputs("                               ");
+        cputs("                                 ");
         break;
 
     case MESSAGE_PENDING:
@@ -462,12 +462,38 @@ void message_printout(int message_id)
         cputs("<enter> to save <esc> to cancel");
         break;
 
+    case MESSAGE_BLACK_VICOTRY:
+        textcolor(LIGHTMAGENTA);
+        textbackground(BLACK);
+
+        cputs("Black wins!");
+        gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
+        cputs("press <any> to start a new game");
+        break;
+
+    case MESSAGE_WHITE_VICOTRY:
+        textcolor(LIGHTMAGENTA);
+        textbackground(BLACK);
+
+        cputs("White wins!");
+        gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
+        cputs("press <any> to start a new game");
+        break;
+
+    case MESSAGE_DRAW:
+        textcolor(LIGHTMAGENTA);
+        textbackground(BLACK);
+
+        cputs("Draw!");
+        gotoxy(LEGEND_X, LEGEND_Y + LEGEND_FULL_HEIGHT + 1);
+        cputs("press <any> to start a new game");
+        break;
     default:
         break;
     }
 }
 
-bool has_liberties(int *gamestate, int b_size, int x, int y)
+bool has_liberties(char *gamestate, int b_size, int x, int y)
 {
     if (((x - 1) >= 0 && gamestate[(x - 1) + y * b_size] == STONE_NO) ||
         ((x + 1) < b_size && gamestate[(x + 1) + y * b_size] == STONE_NO) ||
@@ -478,7 +504,7 @@ bool has_liberties(int *gamestate, int b_size, int x, int y)
     return false;
 }
 
-bool is_valid_position(int *gamestate, int b_size, int x, int y, int player, int stone_x, int stone_y)
+bool is_valid_position(char *gamestate, int b_size, int x, int y, int player, int stone_x, int stone_y)
 {
     if (gamestate[x + y * b_size] != STONE_NO || // cant place on top of another stone
         (x == stone_x && y == stone_y))          // enforcing the ko rule
@@ -504,7 +530,7 @@ bool is_valid_position(int *gamestate, int b_size, int x, int y, int player, int
     return true;
 }
 
-bool can_kill_surroundings(int *gamestate, int b_size, int x, int y, int player)
+bool can_kill_surroundings(char *gamestate, int b_size, int x, int y, int player)
 {
     // a temporary change invisible to the player
     gamestate[x + y * b_size] = player;
@@ -523,7 +549,7 @@ bool can_kill_surroundings(int *gamestate, int b_size, int x, int y, int player)
     return false;
 }
 
-bool will_kill_itself(int *gamestate, int b_size, int x, int y, int player)
+bool will_kill_itself(char *gamestate, int b_size, int x, int y, int player)
 {
     // a temporary change invisible to the player
     gamestate[x + y * b_size] = player;
@@ -538,7 +564,7 @@ bool will_kill_itself(int *gamestate, int b_size, int x, int y, int player)
     return false;
 }
 
-void capture_surrounding_chains(screen_size_t *scr, int *gamestate, int b_size, int x, int y, game_var_t *game_var)
+void capture_surrounding_chains(screen_size_t *scr, char *gamestate, int b_size, int x, int y, game_var_t *game_var)
 {
     int score = 0;
     if ((x - 1) >= 0 && gamestate[(x - 1) + y * b_size] == game_var->current_player)
@@ -556,7 +582,7 @@ void capture_surrounding_chains(screen_size_t *scr, int *gamestate, int b_size, 
         game_var->black_score += score;
 }
 
-bool chain_check_suffocation(int *gamestate, int b_size, bool *counted_stones, int x, int y, int player)
+bool chain_check_suffocation(char *gamestate, int b_size, bool *counted_stones, int x, int y, int player)
 {
     bool suffocating = true;
 
@@ -592,7 +618,7 @@ bool chain_check_suffocation(int *gamestate, int b_size, bool *counted_stones, i
     return suffocating;
 }
 
-bool check_chain_for_liberties(int *gamestate, int b_size, int x, int y, int player)
+bool check_chain_for_liberties(char *gamestate, int b_size, int x, int y, int player)
 {
     bool *counted_stones = (bool *)malloc(sizeof(bool) * b_size * b_size);
     int i;
@@ -604,11 +630,10 @@ bool check_chain_for_liberties(int *gamestate, int b_size, int x, int y, int pla
     return !result;
 }
 
-int capture_chain(screen_size_t *scr, int *gamestate, int b_size, int x, int y, int player, int *last_captured_x_p, int *last_captured_y_p)
+int capture_chain(screen_size_t *scr, char *gamestate, int b_size, int x, int y, int player, int *last_captured_x_p, int *last_captured_y_p)
 {
     bool *counted_stones = (bool *)malloc(sizeof(bool) * b_size * b_size);
     int i, j;
-    // bool only_stone = true;
     int captured_stones = 0;
     for (i = 0; i < b_size * b_size; i++)
         counted_stones[i] = false;
@@ -648,17 +673,30 @@ int get_long_input(char *buffer)
     do
     {
         input = getch();
-        if (index < LONG_INPUT_BUFFER_SIZE - 1 && input != 0x0 &&
-            input != 0x0d && input != 0x1b)
+        if (index < LONG_INPUT_BUFFER_SIZE - 1 &&
+            input != 0x0 &&
+            input != KEY_ENTER &&
+            input != KEY_ESCAPE &&
+            input != '\b')
         {
             putch(input);
             buffer[index] = input;
             index++;
         }
+        if (input == '\b' && index > 0)
+        {
+            gotoxy(wherex()-1, wherey());
+            textbackground(BLACK);
+            putch(' ');
+            textbackground(WHITE);
+            gotoxy(wherex()-1, wherey());
+            buffer[index] = '\0';
+            index--;
+        }
 
-    } while ((input != 0x0d && input != 0x1b));
+    } while ((input != KEY_ENTER && input != KEY_ESCAPE));
     buffer[index] = '\0';
-    if (input == 0x0d)
+    if (input == KEY_ENTER)
         return LONG_INPUT_ENTER;
     else
         return LONG_INPUT_ESCAPE;
@@ -702,7 +740,7 @@ bool file_exists(char *name)
     return true;
 }
 
-bool save_game(char *name, int *gamestate, game_var_t *game_var)
+bool save_game(char *name, char *gamestate, game_var_t *game_var)
 {
     char filename[64] = {0};
     strcat(filename, name);
@@ -720,7 +758,7 @@ bool save_game(char *name, int *gamestate, game_var_t *game_var)
     return true;
 }
 
-bool load_game(char *name, int **gamestate_p, game_var_t *game_var)
+bool load_game(char *name, char **gamestate_p, game_var_t *game_var)
 {
     char filename[64] = {0};
     strcat(filename, name);
@@ -740,10 +778,10 @@ bool load_game(char *name, int **gamestate_p, game_var_t *game_var)
     return true;
 }
 
-bool create_board(int **gamestate_p, int b_size)
+bool create_board(char **gamestate_p, int b_size)
 {
     free(*gamestate_p);
-    *gamestate_p = (int *)malloc(sizeof(int) * b_size * b_size);
+    *gamestate_p = (char *)malloc(sizeof(char) * b_size * b_size);
     if (*gamestate_p == NULL)
         return false;
 
@@ -754,7 +792,7 @@ bool create_board(int **gamestate_p, int b_size)
     return true;
 }
 
-void control_the_cursor(screen_size_t *scr, int *gamestate, int b_size, cursor_t *cursor)
+void control_the_cursor(screen_size_t *scr, char *gamestate, int b_size, cursor_t *cursor)
 {
     char input = getch();
     if (input == SPEC_KEY_DOWN_ARROW) // down arrow
@@ -775,7 +813,7 @@ void control_the_cursor(screen_size_t *scr, int *gamestate, int b_size, cursor_t
     }
 }
 
-void new_game(screen_size_t *scr, int **gamestate_p, game_var_t *game_var, cursor_t *cursor)
+void new_game(screen_size_t *scr, char **gamestate_p, game_var_t *game_var, cursor_t *cursor)
 {
     reset_offsets(scr);
     reset_game_var(game_var);
@@ -790,75 +828,179 @@ void reset_offsets(screen_size_t *scr)
     scr->board_y_offset = 1;
 }
 
-int assign_territory(int* gamestate, bool* counted_spaces, game_var_t* game_var, int x, int y)
+bool assign_black_territory(char *gamestate, char *counted_spaces, game_var_t *game_var, int x, int y)
 {
-    int teritory_color = 1; 
-    counted_spaces[x + y * game_var->b_size] = true;
+    if (counted_spaces[x + y * game_var->b_size] == 0)
+    {
+        bool teritory_black = true;
+        counted_spaces[x + y * game_var->b_size] = 1;
 
-    if ((x - 1) >= 0)
-    {
-        if (gamestate[(x - 1) + y * game_var->b_size] == STONE_NO && !counted_spaces[(x - 1) + y * game_var->b_size])
-            teritory_color *= assign_territory(gamestate, counted_spaces, game_var, x-1, y);
-        if (gamestate[(x - 1) + y * game_var->b_size] == STONE_BLACK) 
-            teritory_color *= 3;
-        if (gamestate[(x - 1) + y * game_var->b_size] == STONE_WHITE) 
-            teritory_color *= 2;
-    }
-    if ((x + 1) < game_var->b_size)
-    {
-        if (gamestate[(x + 1) + y * game_var->b_size] == STONE_NO && !counted_spaces[(x + 1) + y * game_var->b_size])
-            teritory_color *= assign_territory(gamestate, counted_spaces, game_var, x+1, y);
-        if (gamestate[(x + 1) + y * game_var->b_size] == STONE_BLACK) 
-            teritory_color *= 3;
-        if (gamestate[(x + 1) + y * game_var->b_size] == STONE_WHITE) 
-            teritory_color *= 2;
-    }
-    if ((y - 1) >= 0)
-    {
-        if (gamestate[x + (y-1) * game_var->b_size] == STONE_NO && !counted_spaces[x + (y-1) * game_var->b_size])
-            teritory_color *= assign_territory(gamestate, counted_spaces, game_var, x, y-1);
-        if (gamestate[x + (y-1) * game_var->b_size] == STONE_BLACK) 
-            teritory_color *= 3;
-        if (gamestate[x + (y-1) * game_var->b_size] == STONE_WHITE)
-            teritory_color *= 2;
-    }
-    if ((y + 1) < game_var->b_size)
-    {
-        if (gamestate[x + (y+1) * game_var->b_size] == STONE_NO && !counted_spaces[x + (y+1) * game_var->b_size])
-            teritory_color *= assign_territory(gamestate, counted_spaces, game_var, x, y+1);
-        if (gamestate[x + (y+1) * game_var->b_size] == STONE_BLACK) 
-            teritory_color *= 3;
-        if (gamestate[x + (y+1) * game_var->b_size] == STONE_WHITE) 
-            teritory_color *= 2;
-    }
+        if ((x - 1) >= 0)
+        {
+            if (gamestate[(x - 1) + y * game_var->b_size] == STONE_NO && !counted_spaces[(x - 1) + y * game_var->b_size])
+                teritory_black *= assign_black_territory(gamestate, counted_spaces, game_var, x - 1, y);
+        }
+        if ((x + 1) < game_var->b_size)
+        {
+            if (gamestate[(x + 1) + y * game_var->b_size] == STONE_NO && !counted_spaces[(x + 1) + y * game_var->b_size])
+                teritory_black *= assign_black_territory(gamestate, counted_spaces, game_var, x + 1, y);
+        }
+        if ((y - 1) >= 0)
+        {
+            if (gamestate[x + (y - 1) * game_var->b_size] == STONE_NO && !counted_spaces[x + (y - 1) * game_var->b_size])
+                teritory_black *= assign_black_territory(gamestate, counted_spaces, game_var, x, y - 1);
+        }
+        if ((y + 1) < game_var->b_size)
+        {
+            if (gamestate[x + (y + 1) * game_var->b_size] == STONE_NO && !counted_spaces[x + (y + 1) * game_var->b_size])
+                teritory_black *= assign_black_territory(gamestate, counted_spaces, game_var, x, y + 1);
+        }
 
-    if (teritory_color % 3 == teritory_color % 2) // teritory belongs to no one
-        return 1;
-    else if (teritory_color % 3 == 0) // teritory is black
-    {
-        return 3;
+        // if no empty spaces start counting the color
+        if ((x - 1) >= 0)
+        {
+            if (gamestate[(x - 1) + y * game_var->b_size] == STONE_WHITE)
+                return false;
+        }
+        if ((x + 1) < game_var->b_size)
+        {
+            if (gamestate[(x + 1) + y * game_var->b_size] == STONE_WHITE)
+                return false;
+        }
+        if ((y - 1) >= 0)
+        {
+            if (gamestate[x + (y - 1) * game_var->b_size] == STONE_WHITE)
+                return false;
+        }
+        if ((y + 1) < game_var->b_size)
+        {
+            if (gamestate[x + (y + 1) * game_var->b_size] == STONE_WHITE)
+                return false;
+        }
+
+        return teritory_black;
     }
-    else if (teritory_color % 2 == 0) // teritory is black
-    {
-        return 2;
-    }
+    else
+        return false;
 }
 
-void calculate_score(int *gamestate, game_var_t *game_var)
+bool assign_white_territory(char *gamestate, char *counted_spaces, game_var_t *game_var, int x, int y)
 {
-    bool *counted_spaces = (bool *)malloc(sizeof(bool) * game_var->b_size * game_var->b_size);
-    int i, j;
+    if (counted_spaces[x + y * game_var->b_size] == TERRITORY_UNCOUNTED)
+    {
+        bool teritory_white = true;
+        counted_spaces[x + y * game_var->b_size] = TERRITORY_COUNTED;
+
+        if ((x - 1) >= 0)
+        {
+            if (gamestate[(x - 1) + y * game_var->b_size] == STONE_NO && !counted_spaces[(x - 1) + y * game_var->b_size])
+                teritory_white *= assign_white_territory(gamestate, counted_spaces, game_var, x - 1, y);
+        }
+        if ((x + 1) < game_var->b_size)
+        {
+            if (gamestate[(x + 1) + y * game_var->b_size] == STONE_NO && !counted_spaces[(x + 1) + y * game_var->b_size])
+                teritory_white *= assign_white_territory(gamestate, counted_spaces, game_var, x + 1, y);
+        }
+        if ((y - 1) >= 0)
+        {
+            if (gamestate[x + (y - 1) * game_var->b_size] == STONE_NO && !counted_spaces[x + (y - 1) * game_var->b_size])
+                teritory_white *= assign_white_territory(gamestate, counted_spaces, game_var, x, y - 1);
+        }
+        if ((y + 1) < game_var->b_size)
+        {
+            if (gamestate[x + (y + 1) * game_var->b_size] == STONE_NO && !counted_spaces[x + (y + 1) * game_var->b_size])
+                teritory_white *= assign_white_territory(gamestate, counted_spaces, game_var, x, y + 1);
+        }
+
+        // if no empty spaces start counting the color
+        if ((x - 1) >= 0)
+        {
+            if (gamestate[(x - 1) + y * game_var->b_size] == STONE_BLACK)
+                return false;
+        }
+        if ((x + 1) < game_var->b_size)
+        {
+            if (gamestate[(x + 1) + y * game_var->b_size] == STONE_BLACK)
+                return false;
+        }
+        if ((y - 1) >= 0)
+        {
+            if (gamestate[x + (y - 1) * game_var->b_size] == STONE_BLACK)
+                return false;
+        }
+        if ((y + 1) < game_var->b_size)
+        {
+            if (gamestate[x + (y + 1) * game_var->b_size] == STONE_BLACK)
+                return false;
+        }
+
+        return teritory_white;
+    }
+    else
+        return false;
+}
+
+void change_all_counted_to(char *counted_spaces, int b_size, char change_to)
+{
+    int x, y;
+    for (y = 0; y < b_size; y++)
+        for (x = 0; x < b_size; x++)
+            if (counted_spaces[x + y * b_size] == 1)
+                counted_spaces[x + y * b_size] = change_to;
+}
+
+void calculate_score(char *gamestate, game_var_t *game_var)
+{
+    int i=0, j, x, y;
+    bool is_gamestate_empty = true;
+    while (is_gamestate_empty && i < game_var->b_size*game_var->b_size)
+    {
+        is_gamestate_empty = !gamestate[i];
+        i++;
+    }
+    if (is_gamestate_empty)
+    {
+        return;
+    }
+    
+    char *counted_spaces = (char *)malloc(sizeof(char) * game_var->b_size * game_var->b_size);
     for (i = 0; i < game_var->b_size * game_var->b_size; i++)
-        counted_spaces[i] = false;
+        counted_spaces[i] = TERRITORY_UNCOUNTED;
 
     for (i = 0; i < game_var->b_size; i++)
     {
         for (j = 0; j < game_var->b_size; j++)
         {
             if (gamestate[i + j * game_var->b_size] == STONE_NO && !counted_spaces[i + j * game_var->b_size])
-                assign_territory(gamestate, counted_spaces, game_var, i, j);
+            {
+                if (assign_black_territory(gamestate, counted_spaces, game_var, i, j))
+                    change_all_counted_to(counted_spaces, game_var->b_size, TERRITORY_BLACK);
+                else
+                    change_all_counted_to(counted_spaces, game_var->b_size, TERRITORY_UNCOUNTED);
+
+                if (assign_white_territory(gamestate, counted_spaces, game_var, i, j))
+                    change_all_counted_to(counted_spaces, game_var->b_size, TERRITORY_WHITE);
+                else
+                    change_all_counted_to(counted_spaces, game_var->b_size, TERRITORY_NOBODY);
+            }
         }
     }
+
+    for (i = 0; i < game_var->b_size; i++)
+        for (j = 0; j < game_var->b_size; j++)
+            switch (counted_spaces[i + j * game_var->b_size])
+            {
+            case TERRITORY_BLACK:
+                game_var->black_score += 1.f;
+                break;
+            case TERRITORY_WHITE:
+                game_var->white_score += 1.f;
+                break;
+
+            default:
+                break;
+            }
+
     free(counted_spaces);
 
     if (game_var->handicap_mode)
@@ -866,3 +1008,5 @@ void calculate_score(int *gamestate, game_var_t *game_var)
     else
         game_var->white_score += 6.5f;
 }
+
+

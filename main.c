@@ -1,5 +1,4 @@
 // Tomasz Krępa 193047
-// TODO scoring
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,9 +13,9 @@ int main()
 
     _setcursortype(_NOCURSOR);
 
-    int input = 0;
+    char input = 0;
     int i;
-    int *board = NULL;
+    char *board = NULL;
     char buf[LONG_INPUT_BUFFER_SIZE];
 
     create_board(&board, BOARD_SIZE);
@@ -35,7 +34,7 @@ int main()
 
     struct text_info info;
     gettextinfo(&info);
-    screen_size_t* screen_info = (screen_size_t*)malloc(sizeof(screen_size_t));
+    screen_size_t *screen_info = (screen_size_t *)malloc(sizeof(screen_size_t));
     if (screen_info == NULL)
     {
         return 1;
@@ -45,27 +44,26 @@ int main()
     screen_info->s_h = info.screenheight;
     screen_info->board_x_offset = 2;
     screen_info->board_y_offset = 1;
-    screen_info->right_border = ((LEGEND_X > BOARD_X) ? LEGEND_X-2 : info.screenwidth);
+    screen_info->right_border = ((LEGEND_X > BOARD_X) ? LEGEND_X - 2 : info.screenwidth);
 
     game_var->b_size = BOARD_SIZE;
     new_game(screen_info, &board, game_var, cursor);
-
-    redraw_screen(screen_info, board, game_var->b_size);
     turn_printout(game_var->current_player);
-    cursor_draw(screen_info, board, game_var->b_size, cursor);
 
     bool valid_position = true;
     bool valid_name = true;
     bool game_saved = false;
     bool game_running = true;
     bool game_loaded = false;
-    
-    bool handicap_placing = false;
 
     int old_xoff = 0, old_yoff = 0;
 
     while (game_running)
     {
+        gettextinfo(&info);
+        screen_info->s_w = info.screenwidth;
+        screen_info->s_h = info.screenheight;
+        screen_info->right_border = ((LEGEND_X > BOARD_X) ? LEGEND_X - 2 : info.screenwidth);
 
         if (old_xoff != screen_info->board_x_offset || old_yoff != screen_info->board_y_offset)
             redraw_screen(screen_info, board, game_var->b_size);
@@ -131,9 +129,8 @@ int main()
                     {
                         message_printout(MESSAGE_PENDING);
                         input = getch();
-                    } 
-                    while (input != KEY_ENTER && input != KEY_ESCAPE);
-                    
+                    } while (input != KEY_ENTER && input != KEY_ESCAPE);
+
                     if (input == KEY_ENTER)
                     {
                         game_var->last_placed_x = cursor->x;
@@ -176,6 +173,7 @@ int main()
                 }
 
                 new_game(screen_info, &board, game_var, cursor);
+                cursor_move(screen_info, board, game_var->b_size, cursor, 0, 0);
 
                 break;
 
@@ -195,10 +193,15 @@ int main()
                             } while (input != KEY_ENTER && input != KEY_ESCAPE);
 
                             if (input == KEY_ENTER)
+                            {
                                 save_game(buf, board, game_var);
+                                game_saved = true;
+                            }
                         }
                         else if (!save_game(buf, board, game_var))
                             return 1;
+                        else
+                            game_saved = true;
                     }
                     else
                         valid_name = false;
@@ -220,6 +223,8 @@ int main()
                     }
                 }
                 cursor_reset(cursor, game_var);
+                cursor_move(screen_info, board, game_var->b_size, cursor, 0, 0);
+
                 redraw_screen(screen_info, board, game_var->b_size);
                 break;
 
@@ -234,6 +239,8 @@ int main()
                 cursor->color = CURSOR_YELLOW;
                 do
                 {
+                    cursor_move(screen_info, board, game_var->b_size, cursor, 0, 0);
+
                     cursor_draw(screen_info, board, game_var->b_size, cursor);
                     input = getch();
                     if (input == 0)
@@ -252,18 +259,38 @@ int main()
 
                 } while (input != KEY_ENTER && input != KEY_ESCAPE);
 
-                if (input == KEY_ENTER) 
+                if (input == KEY_ENTER)
                 {
                     game_var->handicap_mode = true;
                     game_var->current_player = STONE_WHITE;
                 }
-                else new_game(screen_info, &board, game_var, cursor);
+                else
+                    new_game(screen_info, &board, game_var, cursor);
+                cursor_move(screen_info, board, game_var->b_size, cursor, 0, 0);
+
                 break;
 
-                case 'f':
-                    
-                    calculate_score(board, game_var);
-                    break;
+            case 'f':
+
+                calculate_score(board, game_var);
+
+                down_legend_printout(0, 0, game_var->black_score, game_var->white_score);
+                cursor->color = CURSOR_NONE;
+                cursor_draw(screen_info, board, game_var->b_size, cursor);
+
+                message_printout(MESSAGE_NONE);
+                if (game_var->black_score == game_var->white_score)
+                    message_printout(MESSAGE_DRAW);
+                else if (game_var->black_score > game_var->white_score)
+                    message_printout(MESSAGE_BLACK_VICOTRY);
+                else
+                    message_printout(MESSAGE_WHITE_VICOTRY);
+
+                getch();
+                new_game(screen_info, &board, game_var, cursor);
+                cursor_move(screen_info, board, game_var->b_size, cursor, 0, 0);
+
+                break;
             }
         }
     }
