@@ -1,6 +1,5 @@
 // Tomasz Krępa 193047
 // TODO scoring
-// TODO scrolling
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,6 +45,7 @@ int main()
     screen_info->s_h = info.screenheight;
     screen_info->board_x_offset = 2;
     screen_info->board_y_offset = 1;
+    screen_info->right_border = ((LEGEND_X > BOARD_X) ? LEGEND_X-2 : info.screenwidth);
 
     game_var->b_size = BOARD_SIZE;
     new_game(screen_info, &board, game_var, cursor);
@@ -168,7 +168,6 @@ int main()
                     break;
                 case '4':
                     get_long_input(buf);
-                    // TODO limit the change to the visible screen
                     game_var->b_size = atoi(buf);
                     break;
 
@@ -235,6 +234,7 @@ int main()
                 cursor->color = CURSOR_YELLOW;
                 do
                 {
+                    cursor_draw(screen_info, board, game_var->b_size, cursor);
                     input = getch();
                     if (input == 0)
                     {
@@ -245,6 +245,10 @@ int main()
                         if (input == 'i')
                             place_stone(screen_info, board, game_var->b_size, cursor, STONE_BLACK);
                     }
+                    if (old_xoff != screen_info->board_x_offset || old_yoff != screen_info->board_y_offset)
+                        redraw_screen(screen_info, board, game_var->b_size);
+                    old_xoff = screen_info->board_x_offset;
+                    old_yoff = screen_info->board_y_offset;
 
                 } while (input != KEY_ENTER && input != KEY_ESCAPE);
 
@@ -255,6 +259,11 @@ int main()
                 }
                 else new_game(screen_info, &board, game_var, cursor);
                 break;
+
+                case 'f':
+                    
+                    calculate_score(board, game_var);
+                    break;
             }
         }
     }
